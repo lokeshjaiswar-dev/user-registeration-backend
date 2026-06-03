@@ -5,11 +5,13 @@ const authenticateToken = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all users (with search + filters)
+// GET all users – include selected_image and image1..image4
 router.get('/', authenticateToken, async (req, res) => {
     try {
         let { search, gender, city, education } = req.query;
-        let query = 'SELECT id, email, gender, city, selected_image, education, created_at FROM users WHERE 1=1';
+        let query = `SELECT id, email, gender, city, selected_image, 
+                            image1, image2, image3, image4, education, created_at 
+                     FROM users WHERE 1=1`;
         let params = [];
 
         if (search) {
@@ -38,10 +40,15 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 });
 
-// Get single user
+// GET single user – includes all image columns
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
-        const [users] = await db.query('SELECT id, email, gender, city, selected_image, education FROM users WHERE id = ?', [req.params.id]);
+        const [users] = await db.query(
+            `SELECT id, email, gender, city, selected_image, 
+                    image1, image2, image3, image4, education 
+             FROM users WHERE id = ?`,
+            [req.params.id]
+        );
         if (users.length === 0) return res.status(404).json({ message: 'User not found' });
         res.json(users[0]);
     } catch (error) {
@@ -49,10 +56,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Update user
+// UPDATE user – update all fields (including images)
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
-        const { email, gender, city, selected_image, education, password } = req.body;
+        const { 
+            email, gender, city, selected_image, 
+            image1, image2, image3, image4, education, password 
+        } = req.body;
         const userId = req.params.id;
 
         const [existing] = await db.query('SELECT * FROM users WHERE email = ? AND id != ?', [email, userId]);
@@ -60,8 +70,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(400).json({ message: 'Email already used by another user' });
         }
 
-        let updateQuery = 'UPDATE users SET email = ?, gender = ?, city = ?, selected_image = ?, education = ?';
-        let params = [email, gender, city, selected_image, education];
+        let updateQuery = `UPDATE users SET 
+                           email = ?, gender = ?, city = ?, selected_image = ?,
+                           image1 = ?, image2 = ?, image3 = ?, image4 = ?, education = ?`;
+        let params = [email, gender, city, selected_image, image1, image2, image3, image4, education];
 
         if (password && password.trim() !== '') {
             const hashed = await bcrypt.hash(password, 10);
@@ -79,7 +91,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Delete user
+// DELETE user – unchanged
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);

@@ -5,10 +5,13 @@ const db = require('../config/db');
 
 const router = express.Router();
 
-// Register
+// Register – now expects selected_image (avatar) plus image1..image4
 router.post('/register', async (req, res) => {
     try {
-        const { email, password, gender, city, selected_image, education } = req.body;
+        const { 
+            email, password, gender, city, selected_image, 
+            image1, image2, image3, image4, education 
+        } = req.body;
 
         const [existing] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         if (existing.length > 0) {
@@ -17,8 +20,12 @@ router.post('/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         await db.query(
-            'INSERT INTO users (email, password, gender, city, selected_image, education) VALUES (?, ?, ?, ?, ?, ?)',
-            [email, hashedPassword, gender, city, selected_image, education]
+            `INSERT INTO users 
+            (email, password, gender, city, selected_image, 
+             image1, image2, image3, image4, education) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [email, hashedPassword, gender, city, selected_image, 
+             image1, image2, image3, image4, education]
         );
 
         res.status(201).json({ message: 'User registered successfully' });
@@ -28,7 +35,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Login
+// Login – unchanged
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
